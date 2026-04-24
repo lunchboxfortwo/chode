@@ -1,0 +1,28 @@
+{
+  "open": [
+    "AA", "KK", "QQ", "JJ", "TT", "99", "88", "77", "66", "55", "44", "33",
+    "AKs", "AQs", "AJs", "ATs", "A9s", "A8s", "A7s", "A6s", "A5s", "A4s", "A3s", "A2s",
+    "KQs", "KJs", "KTs", "K9s", "K8s", "K7s",
+    "QJs", "QTs", "Q9s", "Q8s",
+    "JTs", "J9s", "J8s",
+    "T9s", "T8s", "T7s",
+    "98s", "97s", "96s",
+    "87s", "86s", "85s",
+    "76s", "75s", "65s", "64s",
+    "AKo", "AQo", "AJo", "ATo", "KQo", "KJo", "KTo", "QJo", "QTo"
+  ],
+  "vs_raise_call": [
+    "JJ", "TT", "99", "88", "77", "66",
+    "AQs", "AJs", "ATs", "A9s",
+    "KQs", "KJs", "QJs", "JTs", "T9s", "98s"
+  ],
+  "vs_raise_4bet": [
+    "AA", "KK",
+    "AKs", "AKo"
+  ],
+  "vs_raise_3bet": [
+    "AA", "KK", "QQ",
+    "AKs", "AKo",
+    "A5s", "A4s", "A3s", "A2s"
+  ]
+}
