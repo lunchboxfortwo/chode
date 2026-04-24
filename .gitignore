@@ -1,0 +1,7 @@
+__pycache__/
+*.py[cod]
+*.pyo
+.env
+data/hand_histories/
+TexasSolver/
+.venv/
