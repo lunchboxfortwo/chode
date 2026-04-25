@@ -162,6 +162,7 @@ class PokerGame:
                 s.stack = BUY_IN
                 self._emit("rebuy", {"name": s.name, "stack": BUY_IN})
 
+        self._street_history: dict[str, list[str]] = {}  # completed street action seqs
         self._assign_positions()
         self._emit("hand_start", {"hand_num": self.hand_num, "button": self.button})
         self._record_history_header()
@@ -186,6 +187,7 @@ class PokerGame:
         self.history.street("FLOP", flop)
         self._emit("street", {"street": "flop", "board": self.board})
         self._betting_round()
+        self._street_history['flop'] = list(self._street_action_seq)
         if self._one_left():
             self._award_pot()
             return
@@ -199,6 +201,7 @@ class PokerGame:
         self.history.street("TURN", [turn])
         self._emit("street", {"street": "turn", "board": self.board})
         self._betting_round()
+        self._street_history['turn'] = list(self._street_action_seq)
         if self._one_left():
             self._award_pot()
             return
@@ -392,6 +395,11 @@ class PokerGame:
                 player_idx=_position_to_openspiel_idx(seat.position),
             )
         else:
+            prev = []
+            if self.street in ('turn', 'river'):
+                prev.append(self._street_history.get('flop', []))
+            if self.street == 'river':
+                prev.append(self._street_history.get('turn', []))
             return bot.decide_postflop(
                 board=self.board,
                 position=seat.position.lower(),
@@ -400,6 +408,7 @@ class PokerGame:
                 to_call=to_call,
                 is_first_to_act=(self.last_raiser is None),
                 action_sequence=list(self._street_action_seq),
+                prev_street_actions=prev,
             )
 
     # ─── Helpers ─────────────────────────────────────────────────────────

@@ -29,11 +29,12 @@ class GTOBot(BaseBot):
         return Action("fold")
 
     def decide_postflop(self, board, position, stack, pot, to_call, is_first_to_act,
-                        action_sequence=None) -> Action:
+                        action_sequence=None, prev_street_actions=None) -> Action:
         pos = "oop" if is_first_to_act else "ip"
         result = solve_postflop_gto(
             self.hole_cards, board, pot, stack,
             position=pos, action_history=action_sequence or [], to_call=to_call,
+            prev_street_actions=prev_street_actions or [],
         )
         action = result["action"]
         equity = result["equity"]

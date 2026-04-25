@@ -27,7 +27,7 @@ class NitBot(BaseBot):
         amt = min(bb * 3, stack)
         return Action("raise", amt)
 
-    def decide_postflop(self, board, position, stack, pot, to_call, is_first_to_act, action_sequence=None) -> Action:
+    def decide_postflop(self, board, position, stack, pot, to_call, is_first_to_act, action_sequence=None, prev_street_actions=None) -> Action:
         c1, c2 = self.hole_cards
         cat = hand_category(c1, c2)
 

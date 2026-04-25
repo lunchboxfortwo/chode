@@ -71,11 +71,12 @@ class AdaptiveBot(BaseBot):
         return Action("fold")
 
     def decide_postflop(self, board, position, stack, pot, to_call, is_first_to_act,
-                        action_sequence=None) -> Action:
+                        action_sequence=None, prev_street_actions=None) -> Action:
         stats = self._stats()
         pos = "oop" if is_first_to_act else "ip"
         result = solve_postflop_gto(self.hole_cards, board, pot, stack,
-                                    position=pos, action_history=action_sequence or [], to_call=to_call)
+                                    position=pos, action_history=action_sequence or [], to_call=to_call,
+                                    prev_street_actions=prev_street_actions or [])
         equity = result["equity"]
 
         # Exploit: human folds to cbets → bet more often

@@ -46,6 +46,7 @@ class BaseBot(ABC):
         to_call: int,
         is_first_to_act: bool,
         action_sequence: list[str] = None,
+        prev_street_actions: list[list[str]] = None,
     ) -> Action:
         ...
 
