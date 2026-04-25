@@ -1,7 +1,7 @@
 import random
 from bots.base import BaseBot, Action
 from strategy.preflop import preflop_action, hand_category, open_raise_size, three_bet_size
-from strategy.solver import solve_postflop
+from strategy.postflop_solver import solve_postflop_gto
 from strategy.tracker import OpponentTracker
 from strategy.preflop_solver import get_solver
 
@@ -34,7 +34,7 @@ class AdaptiveBot(BaseBot):
 
         # Get GTO baseline from MCCFR solver
         base = "fold"
-        solver = get_solver(6)
+        solver = get_solver(self.n_players)
         if solver.available and action_sequence is not None:
             sampled = solver.sample_action(self.hole_cards, player_idx, action_sequence)
             if sampled is not None:
@@ -72,7 +72,8 @@ class AdaptiveBot(BaseBot):
 
     def decide_postflop(self, board, position, stack, pot, to_call, is_first_to_act) -> Action:
         stats = self._stats()
-        result = solve_postflop(self.hole_cards, board, pot, stack, position)
+        pos = "oop" if is_first_to_act else "ip"
+        result = solve_postflop_gto(self.hole_cards, board, pot, stack, position=pos, to_call=to_call)
         equity = result["equity"]
 
         # Exploit: human folds to cbets → bet more often

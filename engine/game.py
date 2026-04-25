@@ -97,9 +97,12 @@ class PokerGame:
         for i, (name, btype) in enumerate(zip(BOT_NAMES, BOT_TYPES), start=1):
             self.seats.append(SeatState(i, name, is_human=False))
 
+        n_players = 1 + len(BOT_NAMES)
         self.bots = {}
         for i, (name, btype) in enumerate(zip(BOT_NAMES, BOT_TYPES), start=1):
-            self.bots[i] = _make_bot(btype, name, i, self.tracker, 0)
+            bot = _make_bot(btype, name, i, self.tracker, 0)
+            bot.n_players = n_players
+            self.bots[i] = bot
 
         # Hand state
         self.board: list[str] = []

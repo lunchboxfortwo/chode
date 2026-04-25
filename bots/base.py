@@ -18,6 +18,7 @@ class BaseBot(ABC):
         self.name = name
         self.seat = seat
         self.hole_cards: list[str] = []
+        self.n_players: int = 6
 
     @abstractmethod
     def decide_preflop(

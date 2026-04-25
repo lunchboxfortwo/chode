@@ -1,7 +1,7 @@
 import random
 from bots.base import BaseBot, Action
 from strategy.preflop import preflop_action, open_raise_size, three_bet_size
-from strategy.solver import solve_postflop
+from strategy.postflop_solver import solve_postflop_gto
 from strategy.preflop_solver import get_solver
 
 
@@ -13,7 +13,7 @@ class GTOBot(BaseBot):
         c1, c2 = self.hole_cards
 
         # Try MCCFR solver first
-        solver = get_solver(6)
+        solver = get_solver(self.n_players)
         if solver.available and action_sequence is not None:
             sampled = solver.sample_action(self.hole_cards, player_idx, action_sequence)
             if sampled is not None:
@@ -29,26 +29,33 @@ class GTOBot(BaseBot):
         return Action("fold")
 
     def decide_postflop(self, board, position, stack, pot, to_call, is_first_to_act) -> Action:
-        result = solve_postflop(self.hole_cards, board, pot, stack, position)
+        pos = "oop" if is_first_to_act else "ip"
+        result = solve_postflop_gto(
+            self.hole_cards, board, pot, stack,
+            position=pos, to_call=to_call,
+        )
         action = result["action"]
+        equity = result["equity"]
 
         if action == "fold" and to_call == 0:
             action = "check"
 
-        if action in ("bet", "raise") and result["amount"] > 0:
+        if action in ("bet", "raise"):
             if to_call > 0:
-                # Facing a bet: decide call or raise
-                if result["equity"] >= 0.65:
-                    raise_amt = min(to_call * 3, stack)
-                    return Action("raise", raise_amt)
-                if result["equity"] >= 0.35:
+                if equity >= 0.65:
+                    return Action("raise", min(to_call * 3, stack))
+                if equity >= 0.35:
                     return Action("call", min(to_call, stack))
                 return Action("fold")
-            return Action("bet", min(result["amount"], stack))
+            amt = result.get("amount", int(pot * 0.67))
+            return Action("bet", min(amt, stack))
 
-        if action == "check":
+        if action == "allin":
+            return Action("allin", stack)
+
+        if action in ("check", "fold"):
             if to_call > 0:
-                if result["equity"] >= 0.40:
+                if equity >= 0.40:
                     return Action("call", min(to_call, stack))
                 return Action("fold")
             return Action("check")
