@@ -30,6 +30,8 @@ class BaseBot(ABC):
         raise_position: str,
         last_raise: int,
         bb: int,
+        action_sequence: list[str] = None,
+        player_idx: int = 0,
     ) -> Action:
         ...
 

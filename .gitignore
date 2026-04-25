@@ -3,5 +3,6 @@ __pycache__/
 *.pyo
 .env
 data/hand_histories/
+data/preflop_tables/*.pkl
 TexasSolver/
 .venv/

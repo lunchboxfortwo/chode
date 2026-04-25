@@ -23,6 +23,12 @@ from strategy.tracker import OpponentTracker
 RANKS = "23456789TJQKA"
 SUITS = "cdhs"
 
+_POS_TO_SPIEL_IDX = {"SB": 0, "BB": 1, "UTG": 2, "HJ": 3, "CO": 4, "BTN": 5}
+
+
+def _position_to_openspiel_idx(position: str) -> int:
+    return _POS_TO_SPIEL_IDX.get(position.upper(), 2)
+
 
 def _make_deck() -> list[str]:
     deck = [r + s for r in RANKS for s in SUITS]
@@ -219,6 +225,7 @@ class PokerGame:
         self.min_raise = BIG_BLIND * 2
         self.last_raiser = None
         self.last_raise_amount = BIG_BLIND
+        self._street_action_seq: list[str] = []  # ordered action history this street
 
         # Determine action order
         order = self._action_order(preflop)
@@ -270,6 +277,7 @@ class PokerGame:
 
             if action.type == "fold":
                 seat.folded = True
+                self._street_action_seq.append("fold")
                 self._log_action(seat.name, "folds")
                 self.history.action(seat.name, "folds")
                 self.tracker.record_action(seat.seat, "fold")
@@ -286,6 +294,7 @@ class PokerGame:
                     self.pot += call_amt
                     if seat.stack == 0:
                         seat.all_in = True
+                    self._street_action_seq.append("call")
                     self._log_action(seat.name, f"calls ${call_amt:,}")
                     self.history.action(seat.name, "calls", call_amt)
                     self.tracker.record_action(seat.seat, "call")
@@ -293,6 +302,7 @@ class PokerGame:
                     if seat.is_human:
                         self.tracker.record_vpip(0)
                 else:
+                    self._street_action_seq.append("check")
                     self._log_action(seat.name, "checks")
                     self.history.action(seat.name, "checks")
                     self._emit("action", {"player": seat.name, "action": "check", "amount": 0})
@@ -313,6 +323,7 @@ class PokerGame:
                 seat.current_bet = amt
                 if seat.stack == 0:
                     seat.all_in = True
+                self._street_action_seq.append("allin" if action.type == "allin" else "raise")
                 label = "raises to" if self.to_call > 0 else "bets"
                 self._log_action(seat.name, f"{label} ${amt:,}")
                 self.history.action(seat.name, f"{label}", amt)
@@ -374,6 +385,8 @@ class PokerGame:
                 raise_position=self.raise_position,
                 last_raise=self.to_call,
                 bb=BIG_BLIND,
+                action_sequence=list(self._street_action_seq),
+                player_idx=_position_to_openspiel_idx(seat.position),
             )
         else:
             return bot.decide_postflop(
@@ -474,7 +487,7 @@ class PokerGame:
 
     def _showdown(self):
         """Reveal all hands and award pot using simple rank-based heuristic."""
-        from strategy.solver import _hand_strength_heuristic
+        from strategy.solver import _fallback_heuristic as _hand_strength_heuristic
         remaining = [(s, _hand_strength_heuristic(s.hole_cards, self.board))
                      for s in self.seats if not s.folded]
         remaining.sort(key=lambda x: x[1], reverse=True)

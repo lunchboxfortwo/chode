@@ -3,6 +3,7 @@ from bots.base import BaseBot, Action
 from strategy.preflop import preflop_action, hand_category, open_raise_size, three_bet_size
 from strategy.solver import solve_postflop
 from strategy.tracker import OpponentTracker
+from strategy.preflop_solver import get_solver
 
 RANK_VALUE = {"2": 2, "3": 3, "4": 4, "5": 5, "6": 6, "7": 7, "8": 8,
               "9": 9, "T": 10, "J": 11, "Q": 12, "K": 13, "A": 14}
@@ -25,12 +26,21 @@ class AdaptiveBot(BaseBot):
     def _stats(self):
         return self.tracker.get(self.human_seat)
 
-    def decide_preflop(self, position, stack, pot, to_call, facing_raise, raise_position, last_raise, bb) -> Action:
+    def decide_preflop(self, position, stack, pot, to_call, facing_raise, raise_position, last_raise, bb,
+                       action_sequence=None, player_idx=0) -> Action:
         stats = self._stats()
         c1, c2 = self.hole_cards
         cat = hand_category(c1, c2)
 
-        base = preflop_action(position, c1, c2, facing_raise, raise_position)
+        # Get GTO baseline from MCCFR solver
+        base = "fold"
+        solver = get_solver(6)
+        if solver.available and action_sequence is not None:
+            sampled = solver.sample_action(self.hole_cards, player_idx, action_sequence)
+            if sampled is not None:
+                base = sampled  # 'fold', 'call', 'bet', 'allin'
+        if base == "fold":
+            base = preflop_action(position, c1, c2, facing_raise, raise_position)
 
         if facing_raise:
             # If human folds a lot to 3-bets → 3-bet bluff wider
@@ -49,11 +59,12 @@ class AdaptiveBot(BaseBot):
                     return Action("call", min(to_call, stack))
                 return Action("fold")
 
-        if base == "raise":
+        if base in ("raise", "bet", "allin"):
+            if base == "allin":
+                return Action("allin", stack)
             amt = open_raise_size(stack, bb)
-            # vs tight opponent → open wider
             if stats.vpip < 0.20:
-                amt = min(bb * 2, stack)  # smaller sizing to steal more
+                amt = min(bb * 2, stack)
             return Action("raise", min(amt, stack))
         if base == "call":
             return Action("call", min(to_call, stack))

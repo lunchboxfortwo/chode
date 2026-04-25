@@ -16,7 +16,8 @@ class WhaleBot(BaseBot):
     VPIP_THRESHOLD = 0.50  # plays top ~50% of hands
     BLUFF_FREQ = 0.45
 
-    def decide_preflop(self, position, stack, pot, to_call, facing_raise, raise_position, last_raise, bb) -> Action:
+    def decide_preflop(self, position, stack, pot, to_call, facing_raise, raise_position, last_raise, bb,
+                       action_sequence=None, player_idx=0) -> Action:
         c1, c2 = self.hole_cards
         cat = hand_category(c1, c2)
         top_rank = _top_card_rank(c1, c2)

@@ -63,7 +63,7 @@ def show_table(
     for s in seats:
         name = s["name"]
         stack = f"${s['stack']:,}"
-        bet = f"${s['bet']:,}" if s["bet"] else "-"
+        bet = f"${s['current_bet']:,}" if s.get("current_bet") else "-"
         pos = s.get("position", "")
         folded = s.get("folded", False)
         is_human = s.get("is_human", False)

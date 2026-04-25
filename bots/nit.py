@@ -10,7 +10,8 @@ NIT_RANGE = {
 class NitBot(BaseBot):
     """Only plays top ~5% of hands. Folds to any aggression."""
 
-    def decide_preflop(self, position, stack, pot, to_call, facing_raise, raise_position, last_raise, bb) -> Action:
+    def decide_preflop(self, position, stack, pot, to_call, facing_raise, raise_position, last_raise, bb,
+                       action_sequence=None, player_idx=0) -> Action:
         c1, c2 = self.hole_cards
         cat = hand_category(c1, c2)
 
