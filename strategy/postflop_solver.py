@@ -224,6 +224,8 @@ def solve_postflop_gto(
     sampled = sample_postflop_action(hole, board, player_idx, action_history)
 
     if sampled is not None:
+        if sampled == "call" and to_call == 0:
+            sampled = "check"
         amount = _size_for_action(sampled, pot, stack, to_call)
         return {"action": sampled, "amount": amount, "equity": equity}
 

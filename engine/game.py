@@ -399,6 +399,7 @@ class PokerGame:
                 pot=self.pot,
                 to_call=to_call,
                 is_first_to_act=(self.last_raiser is None),
+                action_sequence=list(self._street_action_seq),
             )
 
     # ─── Helpers ─────────────────────────────────────────────────────────
