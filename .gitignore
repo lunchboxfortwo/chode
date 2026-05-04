@@ -2,8 +2,33 @@ __pycache__/
 *.py[cod]
 *.pyo
 .env
-data/hand_histories/
-data/preflop_tables/*.pkl
-data/postflop_tables/*.pkl
-TexasSolver/
 .venv/
+*.egg-info/
+dist/
+build/
+
+# Training data (large binary files — regenerate from solvers)
+data/preflop_tables/
+data/postflop_tables/
+data/preflop_nn/
+data/postflop_nn/
+data/models/
+data/flop_bucket_lookup_K32.npy
+data/hand_histories/
+data/tracker/
+data/ranges/
+
+# Logs
+logs/
+*.log
+server.log
+
+# Solver training runtime state
+solver_training/training_watchdog.status
+solver_training/training_watchdog.pid
+
+# IDE / OS
+.claude/
+.DS_Store
+*.swp
+*.swo

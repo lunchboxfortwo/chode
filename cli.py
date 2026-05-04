@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Omega Poker — Rich terminal CLI.
+Chode Poker — Rich terminal CLI.
 Runs the full game in the main thread; no server or browser needed.
 """
 import sys
@@ -40,7 +40,8 @@ class CLIGame(PokerGame):
 
         elif event == "action":
             amt = data.get("amount", 0)
-            disp.show_action(data["player"], data["action"], amt)
+            note = data.get("strategy_note", "")
+            disp.show_action(data["player"], data["action"], amt, strategy_note=note)
 
         elif event == "showdown":
             disp.show_message("\n[bold]── SHOWDOWN ──[/bold]")
@@ -95,7 +96,7 @@ class CLIGame(PokerGame):
 
 
 def main():
-    disp.show_message("\n[bold yellow]♠ OMEGA POKER ♦  [dim]CLI Edition[/dim][/bold yellow]")
+    disp.show_message("\n[bold magenta]♠ CHODE POKER ♦  [dim]CLI Edition[/dim][/bold magenta]")
     disp.show_message("[dim]6-player NLHE · $10,000 buy-in · 50/100 blinds[/dim]\n")
     name = Prompt.ask("Your name", default="Hero")
 

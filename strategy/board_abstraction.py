@@ -68,6 +68,50 @@ def equity_bucket(equity: float) -> int:
     return 3       # air
 
 
+# ─── Dynamic bet sizing ──────────────────────────────────────────────────────
+
+def bet_fraction(board: list[str], street: str, equity: float) -> float:
+    """
+    Return fraction-of-pot bet size based on board texture, street, and equity.
+
+    Dry boards  → smaller sizing (less protection needed, narrower value range)
+    Wet boards  → larger sizing (charge draws, leverage range advantage)
+    River       → polarize: strong hands overbet, thin value underbet
+    """
+    if not board or len(board) < 3:
+        return 0.67
+
+    t = board_texture(board[:3])
+
+    # Wetness score 0-3
+    wetness = t["suit"] + (1 - t["connected"])  # suit: 0-2, connected bonus: 1 if disconnected
+    # paired boards are usually drier (top of range is clearer, less draw equity)
+
+    if t["paired"]:
+        base = 0.40
+    elif wetness >= 3:   # monotone or connected two-tone
+        base = 0.75
+    elif wetness == 2:
+        base = 0.60
+    elif wetness == 1:
+        base = 0.50
+    else:                # dry rainbow disconnected
+        base = 0.40
+
+    if street == "river":
+        # Polarize: overbets with monsters, small bets for thin value, bluff sizing matches value
+        if equity >= 0.80:
+            return 1.20   # overbet
+        if equity >= 0.60:
+            return 0.33   # thin value / blocking bet
+        return base       # bluff / give up
+
+    if street == "turn":
+        base = min(base + 0.10, 1.0)   # slightly larger on turn (protection + leverage)
+
+    return base
+
+
 # ─── Helpers ──────────────────────────────────────────────────────────────────
 
 def _high_bucket(top_rank: int) -> int:

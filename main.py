@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Omega Poker — CLI entry point.
+Chode Poker — CLI entry point.
 Starts the FastAPI/WebSocket server and opens the browser UI.
 """
 import sys
@@ -13,7 +13,7 @@ PORT = int(os.environ.get("PORT", 8765))
 
 
 def main():
-    print(f"\n  Omega Poker")
+    print(f"\n  Chode Poker")
     print(f"  Starting server on http://0.0.0.0:{PORT}")
     print(f"  Open your browser to: http://localhost:{PORT}")
     print(f"  Ctrl-C to quit\n")

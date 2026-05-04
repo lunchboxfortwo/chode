@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chode — Training Progress</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#0f0f1a;color:#e0e0e0;padding:12px;min-height:100vh}
+.wrap{max-width:720px;margin:0 auto}
+h1{font-size:1.4rem;color:#7eb8da;margin-bottom:12px}
+h2{font-size:1.1rem;color:#8bc7a0;margin:16px 0 8px;border-bottom:1px solid #333;padding-bottom:4px}
+
+/* System grid — 2-col on mobile, 4-col on desktop */
+.sys{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+@media(min-width:600px){.sys{grid-template-columns:1fr 1fr 1fr 1fr}}
+.sys-item{background:#1a1a2e;border-radius:8px;padding:8px 10px}
+.sys-label{font-size:.7rem;color:#888;text-transform:uppercase;letter-spacing:.5px}
+.sys-val{font-size:1.05rem;font-weight:600;color:#cde;margin-top:2px}
+
+/* Jobs list */
+.job{background:#1a1a2e;border-radius:8px;padding:10px 12px;margin-bottom:8px}
+.job-head{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:4px}
+.job-name{font-weight:600;font-size:.95rem}
+.job-pct{font-size:1.1rem;font-weight:700;color:#7eb8da}
+.bar-track{background:#2a2a3e;border-radius:4px;height:8px;margin:6px 0;overflow:hidden}
+.bar-fill{height:100%;border-radius:4px;transition:width .5s}
+.bar-fill.running{background:linear-gradient(90deg,#4a9,#6d4)}
+.bar-fill.halted{background:#a64}
+.bar-fill.done{background:#4a9}
+.job-meta{display:grid;grid-template-columns:1fr 1fr;gap:2px 12px;font-size:.78rem;color:#999}
+.job-meta span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.status-badge{font-size:.7rem;padding:2px 6px;border-radius:10px;font-weight:600;text-transform:uppercase}
+.status-badge.running{background:#1a3a2a;color:#4a9}
+.status-badge.halted{background:#3a2a1a;color:#a84}
+.status-badge.done{background:#1a3a2a;color:#4a9}
+
+/* Checkpoints */
+.ckpt-list{display:flex;flex-wrap:wrap;gap:6px}
+.ckpt{background:#1a1a2e;border-radius:6px;padding:4px 8px;font-size:.72rem;color:#8ab;font-family:monospace}
+
+.refresh{font-size:.7rem;color:#555;text-align:right;margin-top:8px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>🧠 Chode Training Progress</h1>
+
+<h2>System</h2>
+<div class="sys" id="sys"></div>
+
+<h2>Neural Net Training</h2>
+<div id="jobs"></div>
+
+<h2>Checkpoints</h2>
+<div id="ckpts"></div>
+
+<div class="refresh">Auto-refreshes every 10s</div>
+</div>
+
+<script>
+const R=document.getElementById.bind(document);
+
+function pctBar(pct,cls){
+  return `<div class="bar-track"><div class="bar-fill ${cls}" style="width:${Math.min(pct,100)}%"></div></div>`;
+}
+
+function badge(s){
+  return `<span class="status-badge ${s}">${s}</span>`;
+}
+
+function fmtEta(s){
+  if(!s)return '—';
+  return s;
+}
+
+function fmtTime(iso){
+  if(!iso)return '—';
+  try{return new Date(iso).toLocaleTimeString();}catch(e){return iso;}
+}
+
+function render(data){
+  // System
+  const sys=data.system||{};
+  const sysItems=[
+    ['RAM',`${sys.ram_used_gb||'?'} / ${sys.ram_total_gb||'?'} GB`],
+    ['Swap',`${sys.swap_used_gb||'?'} / ${sys.swap_total_gb||'?'} GB`],
+    ['Disk',`${sys.disk_used_gb||'?'} / ${sys.disk_total_gb||'?'} GB`],
+    ['Load',sys.cpu_load_1m!='null'?sys.cpu_load_1m:'?']
+  ];
+  R('sys').innerHTML=sysItems.map(([l,v])=>`<div class="sys-item"><div class="sys-label">${l}</div><div class="sys-val">${v}</div></div>`).join('');
+
+  // Jobs
+  const jobs=data.jobs||[];
+  R('jobs').innerHTML=jobs.map(j=>{
+    const cls=j.status||'halted';
+    return `<div class="job">
+      <div class="job-head">
+        <span class="job-name">${j.name||'?'} ${badge(cls)}</span>
+        <span class="job-pct">${(j.pct_done||0).toFixed(1)}%</span>
+      </div>
+      ${pctBar(j.pct_done||0,cls)}
+      <div class="job-meta">
+        <span>Phase: ${j.phase||'?'}</span>
+        <span>Step: ${j.step!=null?j.step.toLocaleString():'?'}</span>
+        <span>Rate: ${j.rate?j.rate.toLocaleString()+'/s':'—'}</span>
+        <span>ETA: ${fmtEta(j.eta)}</span>
+        <span>Games: ${j.games_played?j.games_played.toLocaleString():'—'}</span>
+        <span>Checkpoint: ${fmtTime(j.last_checkpoint)}</span>
+      </div>
+    </div>`;
+  }).join('');
+
+  // Checkpoints
+  const ckpts=data.checkpoints||[];
+  R('ckpts').innerHTML=ckpts.length
+    ?`<div class="ckpt-list">${ckpts.map(c=>`<div class="ckpt">${c}</div>`).join('')}</div>`
+    :'<div style="color:#666;font-size:.85rem">No checkpoints yet</div>';
+}
+
+async function refresh(){
+  try{
+    const r=await fetch('/api/progress');
+    const d=await r.json();
+    render(d);
+  }catch(e){
+    console.error('refresh failed',e);
+  }
+}
+
+refresh();
+setInterval(refresh,10000);
+</script>
+</body>
+</html>

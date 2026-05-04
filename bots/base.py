@@ -1,11 +1,12 @@
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 
 @dataclass
 class Action:
     type: str   # 'fold', 'call', 'check', 'raise', 'bet', 'allin'
     amount: int = 0
+    strategy_note: str = ""   # e.g. "MCCFR solver", "MC equity", "adaptive/exploit"
 
     def __str__(self):
         if self.amount:
@@ -33,6 +34,7 @@ class BaseBot(ABC):
         bb: int,
         action_sequence: list[str] = None,
         player_idx: int = 0,
+        stacks: list[int] = None,
     ) -> Action:
         ...
 
@@ -47,6 +49,8 @@ class BaseBot(ABC):
         is_first_to_act: bool,
         action_sequence: list[str] = None,
         prev_street_actions: list[list[str]] = None,
+        n_active: int = 2,
+        postflop_player_idx: int = 0,
     ) -> Action:
         ...
 

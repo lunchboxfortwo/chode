@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Chode Poker — Preflop Charts</title>
+<style>
+  :root {
+    --pink:    #ff1493;
+    --pink2:   #ff69b4;
+    --cyan:    #00ffee;
+    --green:   #39ff14;
+    --yellow:  #ffe600;
+    --orange:  #ff8c00;
+    --purple:  #cc44ff;
+    --red:     #ff2244;
+    --bg:      #04040a;
+    --panel:   rgba(8,8,18,0.92);
+    --dim:     #556677;
+    --text:    #ddeeff;
+
+    /* Action palette */
+    --c-fold:    #1a1f2e;
+    --c-call:    #29d36b;
+    --c-bet:     #e23a3a;
+    --c-squeeze: #a855f7;
+    --c-allin:   #ffb400;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    background:
+      radial-gradient(circle at 18% 12%, rgba(255,20,147,0.10), transparent 55%),
+      radial-gradient(circle at 84% 88%, rgba(0,255,238,0.08),  transparent 55%),
+      var(--bg);
+    color: var(--text);
+    font-family: 'Courier New', Courier, monospace;
+    min-height: 100vh;
+    padding: 18px 24px 60px;
+  }
+
+  header {
+    display: flex; align-items: baseline; gap: 18px; flex-wrap: wrap;
+    border-bottom: 1px solid rgba(255,20,147,0.35);
+    padding-bottom: 10px; margin-bottom: 16px;
+  }
+  header h1 {
+    font-family: Impact, 'Arial Black', Arial, sans-serif;
+    font-size: 1.6rem; letter-spacing: 4px;
+    color: #fff;
+    text-shadow: 0 0 6px var(--pink), 0 0 16px var(--pink), 0 0 30px rgba(255,20,147,0.5);
+  }
+  header h1 .accent { color: var(--cyan); text-shadow: 0 0 6px var(--cyan), 0 0 16px var(--cyan); }
+  header .crumbs { color: var(--dim); font-size: 0.78rem; letter-spacing: 2px; }
+  header a { color: var(--cyan); text-decoration: none; }
+  header a:hover { color: var(--pink2); }
+
+  main {
+    display: grid;
+    grid-template-columns: 1fr 340px;
+    gap: 20px;
+    align-items: start;
+  }
+  @media (max-width: 980px) { main { grid-template-columns: 1fr; } }
+
+  .panel {
+    background: var(--panel);
+    border: 1px solid rgba(0,255,238,0.25);
+    border-radius: 6px;
+    padding: 14px 16px;
+  }
+  .panel h2 {
+    font-family: Impact, Arial, sans-serif;
+    color: var(--cyan); letter-spacing: 3px; font-size: 0.85rem;
+    margin-bottom: 10px;
+  }
+
+  .ctrl-row { display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px; }
+  .ctrl-row label {
+    font-size: 0.62rem; color: var(--dim);
+    letter-spacing: 2px; text-transform: uppercase;
+  }
+  .ctrl-row select, .ctrl-row input {
+    border: 1px solid var(--pink);
+    background: rgba(0,0,0,0.65);
+    color: var(--text);
+    padding: 6px 8px;
+    font-family: 'Courier New', monospace;
+    outline: none;
+    border-radius: 3px;
+    font-size: 0.85rem;
+  }
+  .ctrl-row select:focus { border-color: var(--cyan); }
+
+  .legend { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 8px; }
+  .legend-chip {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 0.72rem; color: var(--dim);
+  }
+  .legend-swatch {
+    width: 14px; height: 14px; border-radius: 2px;
+    border: 1px solid rgba(255,255,255,0.15);
+  }
+
+  #spot-title {
+    font-family: Impact, Arial, sans-serif;
+    color: var(--pink2); letter-spacing: 3px;
+    font-size: 1.1rem;
+    margin-bottom: 4px;
+  }
+  #spot-meta { color: var(--dim); font-size: 0.78rem; margin-bottom: 14px; }
+  #spot-meta b { color: var(--cyan); }
+
+  .grid-wrap { overflow-x: auto; }
+  table.grid {
+    border-collapse: separate;
+    border-spacing: 3px;
+    width: 100%;
+    table-layout: fixed;
+    margin: 0 auto;
+  }
+  table.grid td {
+    height: 48px;
+    min-width: 48px;
+    background: var(--c-fold);
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+    font-size: 13px;
+    text-align: center;
+    color: #fff;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.85), 0 0 4px rgba(0,0,0,0.6);
+    cursor: default;
+    transition: transform 0.06s ease;
+    border: 1px solid rgba(0,0,0,0.25);
+  }
+  table.grid td:hover { transform: scale(1.06); z-index: 5; outline: 1px solid var(--cyan); }
+  table.grid td.pair { box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08); }
+  .cell-label {
+    position: absolute;
+    inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700;
+    pointer-events: none;
+    font-family: 'Courier New', monospace;
+  }
+  .cell-bars {
+    position: absolute; inset: 0;
+    display: flex;
+  }
+  .cell-bars > span { display: block; height: 100%; }
+
+  #tt {
+    position: fixed;
+    pointer-events: none;
+    background: rgba(0,0,0,0.92);
+    border: 1px solid var(--cyan);
+    border-radius: 3px;
+    padding: 8px 10px;
+    font-size: 0.78rem;
+    line-height: 1.45;
+    z-index: 1000;
+    min-width: 130px;
+    display: none;
+    box-shadow: 0 0 10px rgba(0,255,238,0.25);
+  }
+  #tt b { color: var(--pink2); letter-spacing: 1px; }
+  #tt .row { display: flex; justify-content: space-between; gap: 12px; }
+  #tt .sw {
+    display: inline-block; width: 9px; height: 9px;
+    border-radius: 1px; margin-right: 5px; vertical-align: middle;
+  }
+
+  #nn-status { font-size: 0.72rem; }
+  #nn-status .row { display: grid; grid-template-columns: 90px 1fr; gap: 6px; padding: 2px 0; }
+  #nn-status .key { color: var(--dim); }
+  #nn-status .val { color: var(--cyan); text-align: right; }
+
+  .err { color: var(--red); font-size: 0.85rem; padding: 14px 0; }
+  .muted { color: var(--dim); font-size: 0.78rem; }
+</style>
+</head>
+
+<body>
+  <header>
+    <h1>CHODE <span class="accent">CHARTS</span></h1>
+    <span class="crumbs"><a href="/">&larr; back to table</a></span>
+    <span class="crumbs"><a href="/progress">progress &rarr;</a></span>
+    <span class="crumbs" id="src-info"></span>
+  </header>
+
+  <main>
+    <section>
+      <div class="panel">
+        <div id="spot-title">—</div>
+        <div id="spot-meta"></div>
+        <div class="grid-wrap">
+          <table class="grid" id="grid"></table>
+        </div>
+      </div>
+    </section>
+
+    <aside>
+      <div class="panel">
+        <h2>SPOT</h2>
+
+        <div class="ctrl-row">
+          <label>Players</label>
+          <select id="sel-n"></select>
+        </div>
+
+        <div class="ctrl-row">
+          <label>Stack (bb): <span id="bb-val">30</span></label>
+          <input type="range" id="bb-slider" min="5" max="200" value="30" step="1" style="width:100%;">
+        </div>
+
+        <div class="ctrl-row">
+          <label>Position</label>
+          <select id="sel-pos"></select>
+        </div>
+
+        <div class="ctrl-row">
+          <label>Scenario (action history)</label>
+          <select id="sel-spot" size="10" style="font-size:0.75rem;height:auto;"></select>
+        </div>
+
+        <div class="legend">
+          <div class="legend-chip"><span class="legend-swatch" style="background:var(--c-bet)"></span>raise</div>
+          <div class="legend-chip"><span class="legend-swatch" style="background:var(--c-squeeze)"></span>squeeze</div>
+          <div class="legend-chip"><span class="legend-swatch" style="background:var(--c-allin)"></span>all-in</div>
+          <div class="legend-chip"><span class="legend-swatch" style="background:var(--c-call)"></span>call</div>
+          <div class="legend-chip"><span class="legend-swatch" style="background:var(--c-fold)"></span>fold</div>
+        </div>
+      </div>
+
+      <div class="panel" style="margin-top:14px;">
+        <h2>NN TRAINING</h2>
+        <div id="nn-status" class="muted">loading…</div>
+      </div>
+    </aside>
+  </main>
+
+  <div id="tt"></div>
+
+<script>
+"use strict";
+
+const RANKS = "AKQJT98765432".split("");
+const ACTION_COLORS = {
+  fold:    "var(--c-fold)",
+  call:    "var(--c-call)",
+  bet:     "var(--c-bet)",
+  squeeze: "var(--c-squeeze)",
+  allin:   "var(--c-allin)",
+};
+const ACTION_HEX = {
+  fold:    "#1a1f2e",
+  call:    "#29d36b",
+  bet:     "#e23a3a",
+  squeeze: "#a855f7",
+  allin:   "#ffb400",
+};
+const ACTION_LABEL = { fold: "fold", call: "call", bet: "raise", squeeze: "squeeze", allin: "all-in" };
+
+const POS_NAMES = {
+  2: ["SB","BB"],
+  3: ["BTN","SB","BB"],
+  4: ["CO","BTN","SB","BB"],
+  5: ["HJ","CO","BTN","SB","BB"],
+  6: ["LJ","HJ","CO","BTN","SB","BB"],
+  7: ["UTG","LJ","HJ","CO","BTN","SB","BB"],
+  8: ["UTG1","UTG","LJ","HJ","CO","BTN","SB","BB"],
+};
+
+let CURRENT = { n: 6, bb: 30, pidx: 0, hist: [] };
+
+const $ = (id) => document.getElementById(id);
+
+/* ── Grid ──────────────────────────────────────────────────────────────── */
+
+function buildGrid() {
+  const tbl = $("grid");
+  tbl.innerHTML = "";
+  for (let r = 0; r < 13; r++) {
+    const tr = document.createElement("tr");
+    for (let c = 0; c < 13; c++) {
+      const td = document.createElement("td");
+      td.dataset.r = r; td.dataset.c = c;
+      let hand;
+      if (r === c)        { hand = RANKS[r] + RANKS[r]; td.classList.add("pair"); }
+      else if (r < c)     { hand = RANKS[r] + RANKS[c] + "s"; }
+      else                { hand = RANKS[c] + RANKS[r] + "o"; }
+      td.dataset.hand = hand;
+      const bars = document.createElement("div"); bars.className = "cell-bars";
+      td.appendChild(bars);
+      const lbl = document.createElement("div"); lbl.className = "cell-label"; lbl.textContent = hand;
+      td.appendChild(lbl);
+      tr.appendChild(td);
+    }
+    tbl.appendChild(tr);
+  }
+  tbl.addEventListener("mousemove", onCellMove);
+  tbl.addEventListener("mouseleave", () => $("tt").style.display = "none");
+}
+
+function paintGrid(chart) {
+  const cells = $("grid").querySelectorAll("td");
+  cells.forEach((td) => {
+    const r = +td.dataset.r, c = +td.dataset.c;
+    const cell = chart.grid[r][c];
+    const bars = td.querySelector(".cell-bars");
+    bars.innerHTML = "";
+    if (!cell) { td.style.background = "var(--c-fold)"; td._probs = null; return; }
+    td._probs = cell;
+    const order = ["bet", "squeeze", "allin", "call", "fold"];
+    for (const a of order) {
+      const p = cell[a] || 0;
+      if (p < 0.001) continue;
+      const seg = document.createElement("span");
+      seg.style.width = (p * 100).toFixed(2) + "%";
+      seg.style.background = ACTION_COLORS[a];
+      bars.appendChild(seg);
+    }
+  });
+}
+
+function onCellMove(e) {
+  const td = e.target.closest("td");
+  if (!td) { $("tt").style.display = "none"; return; }
+  const probs = td._probs;
+  const tt = $("tt");
+  if (!probs) { tt.style.display = "none"; return; }
+  let html = `<b>${td.dataset.hand}</b>`;
+  for (const a of ["bet","squeeze","allin","call","fold"]) {
+    const p = probs[a] || 0;
+    if (p < 0.001 && a !== "fold") continue;
+    const pct = (p*100).toFixed(p < 0.01 ? 2 : 1);
+    html += `<div class="row"><span><span class="sw" style="background:${ACTION_HEX[a]}"></span>${ACTION_LABEL[a]}</span><span>${pct}%</span></div>`;
+  }
+  tt.innerHTML = html;
+  tt.style.display = "block";
+  const x = e.clientX + 14, y = e.clientY + 14;
+  const w = tt.offsetWidth, h = tt.offsetHeight;
+  tt.style.left = Math.min(window.innerWidth - w - 8, x) + "px";
+  tt.style.top  = Math.min(window.innerHeight - h - 8, y) + "px";
+}
+
+/* ── Selectors ─────────────────────────────────────────────────────────── */
+
+function fillN() {
+  const sel = $("sel-n");
+  sel.innerHTML = "";
+  for (const n of [2,3,4,5,6,7,8]) {
+    const opt = document.createElement("option");
+    opt.value = n; opt.textContent = `${n}-max`;
+    sel.appendChild(opt);
+  }
+  sel.value = CURRENT.n;
+}
+
+function fillSpots() {
+  const sel = $("sel-pos");
+  const slot = $("sel-spot");
+  sel.innerHTML = ""; slot.innerHTML = "";
+
+  const n = CURRENT.n;
+  const posNames = POS_NAMES[n] || POS_NAMES[6];
+
+  for (const p of posNames) {
+    const opt = document.createElement("option");
+    opt.value = p; opt.textContent = p;
+    sel.appendChild(opt);
+  }
+
+  const scenarios = [];
+  for (let pidx = 0; pidx < n; pidx++) {
+    const pos = posNames[pidx];
+    // hist length = number of actions before us; actions alternate starting from pidx 0
+    // So the actor after k actions is (k % n)-th player
+    const turnAfter = (k) => k % n;
+    // RFI: 0 prior actions → first actor is pidx 0
+    if (pidx === 0) scenarios.push({ pidx, hist: [], label: `${pos} RFI` });
+    // Facing RFI: 1 prior action → actor is pidx 1
+    if (pidx === 1) scenarios.push({ pidx, hist: ["bet"], label: `${pos} facing RFI` });
+    // Squeeze: 2 prior actions (bet+call), needs n>=3, actor is pidx 2
+    if (n >= 3 && pidx === 2) scenarios.push({ pidx, hist: ["bet","call"], label: `${pos} squeeze spot` });
+    // Facing 3bet: 2 prior actions (bet+bet) in 2p, or 3 prior in 3p+
+    // In 2p: bet(SB),bet(BB) → back to SB (pidx 0)
+    // In 3p+: bet,bet,call → pidx 0 faces 3bet after 3 actions (0%3=0)
+    if (n === 2 && pidx === 0) scenarios.push({ pidx, hist: ["bet","bet"], label: `${pos} facing 3bet` });
+    if (n >= 3 && pidx === 0) scenarios.push({ pidx, hist: ["bet","bet","call"], label: `${pos} facing 3bet+call` });
+    if (n >= 3 && pidx === 0) scenarios.push({ pidx, hist: ["bet","bet"], label: `${pos} facing 3bet` });
+    // Facing 4bet: 3 prior actions in 2p, more in 3p+
+    if (n === 2 && pidx === 1) scenarios.push({ pidx, hist: ["bet","bet","bet"], label: `${pos} facing 4bet` });
+    if (n >= 3 && pidx === 1) scenarios.push({ pidx, hist: ["bet","bet","bet"], label: `${pos} facing 4bet` });
+  }
+
+  for (const s of scenarios) {
+    const opt = document.createElement("option");
+    opt.value = JSON.stringify({ pidx: s.pidx, hist: s.hist });
+    opt.textContent = s.label;
+    slot.appendChild(opt);
+  }
+
+  if (slot.options.length) {
+    slot.value = slot.options[0].value;
+    onSpotChange();
+  }
+}
+
+function refillScenarios() {
+  const slot = $("sel-spot");
+  const pos = $("sel-pos").value;
+  const n = CURRENT.n;
+  const posNames = POS_NAMES[n] || POS_NAMES[6];
+  const pidx = posNames.indexOf(pos);
+  if (pidx < 0) return;
+
+  slot.innerHTML = "";
+  const scenarios = [];
+  const turnAfter = (k) => k % n;
+  // Same logic as buildScenarios but for a single position
+  if (pidx === 0) scenarios.push({ pidx, hist: [], label: `${pos} RFI` });
+  if (pidx === 1) scenarios.push({ pidx, hist: ["bet"], label: `${pos} facing RFI` });
+  if (n >= 3 && pidx === 2) scenarios.push({ pidx, hist: ["bet","call"], label: `${pos} squeeze spot` });
+  if (n === 2 && pidx === 0) scenarios.push({ pidx, hist: ["bet","bet"], label: `${pos} facing 3bet` });
+  if (n >= 3 && pidx === 0) scenarios.push({ pidx, hist: ["bet","bet","call"], label: `${pos} facing 3bet+call` });
+  if (n >= 3 && pidx === 0) scenarios.push({ pidx, hist: ["bet","bet"], label: `${pos} facing 3bet` });
+  if (n === 2 && pidx === 1) scenarios.push({ pidx, hist: ["bet","bet","bet"], label: `${pos} facing 4bet` });
+  if (n >= 3 && pidx === 1) scenarios.push({ pidx, hist: ["bet","bet","bet"], label: `${pos} facing 4bet` });
+  for (const s of scenarios) {
+    const opt = document.createElement("option");
+    opt.value = JSON.stringify({ pidx: s.pidx, hist: s.hist });
+    opt.textContent = s.label;
+    slot.appendChild(opt);
+  }
+  if (slot.options.length) { slot.value = slot.options[0].value; onSpotChange(); }
+}
+
+function onSpotChange() {
+  const slot = $("sel-spot");
+  if (!slot.value) return;
+  const v = JSON.parse(slot.value);
+  CURRENT.pidx = v.pidx;
+  CURRENT.hist = v.hist;
+  loadChart();
+}
+
+async function loadChart() {
+  const histStr = CURRENT.hist.join(",");
+  const bb = parseFloat($("bb-slider").value);
+  const url = `/api/preflop/nn/chart?n=${CURRENT.n}&bb=${bb}&pidx=${CURRENT.pidx}&hist=${encodeURIComponent(histStr)}`;
+
+  let data;
+  try {
+    data = await fetch(url).then(r => r.json());
+  } catch(e) {
+    $("spot-title").textContent = "connection error";
+    $("spot-meta").textContent = "Could not reach server";
+    return;
+  }
+
+  if (data.error) {
+    $("spot-title").textContent = "error";
+    $("spot-meta").textContent = data.error;
+    return;
+  }
+
+  $("spot-title").textContent = data.label;
+  const histTxt = data.history && data.history.length ? data.history.join(" → ") : "first to act";
+  $("spot-meta").innerHTML =
+    `<b>${data.position}</b> · ${data.n_players}-max · ${data.stack_bb}bb · history: <b>${histTxt}</b> · <span style="color:var(--purple)">NN</span> · ${data.n_hands_decoded}/169 hands`;
+
+  const grid = [];
+  for (let r = 0; r < 13; r++) {
+    const row = [];
+    for (let c = 0; c < 13; c++) {
+      const key = `${r},${c}`;
+      row.push(data.hands[key] || null);
+    }
+    grid.push(row);
+  }
+  paintGrid({grid});
+}
+
+/* ── Training status panel ─────────────────────────────────────────────── */
+
+async function renderNNStatus() {
+  const target = $("nn-status");
+  let info;
+  try {
+    info = await fetch("/api/preflop/nn/status").then(r => r.json());
+  } catch(e) {
+    target.textContent = "could not reach server";
+    return;
+  }
+
+  if (!info.available) {
+    target.innerHTML = '<span style="color:var(--yellow)">No NN checkpoint yet — training still starting up</span>';
+    return;
+  }
+
+  let html = "";
+  html += `<div class="row"><span class="key">Checkpoint</span><span class="val">${info.latest_checkpoint || "—"}</span></div>`;
+  html += `<div class="row"><span class="key">Step</span><span class="val">${(info.step || 0).toLocaleString()}</span></div>`;
+  html += `<div class="row"><span class="key">Model size</span><span class="val">${info.params ? (info.params/1e6).toFixed(1)+"M params" : "—"}</span></div>`;
+
+  // Training progress from the /api/progress endpoint
+  let prog = null;
+  try {
+    prog = await fetch("/api/progress").then(r => r.json());
+  } catch(e) {}
+
+  if (prog && prog.jobs) {
+    const nnJobs = prog.jobs.filter(j => j.name && j.name.includes("Preflop"));
+    for (const j of nnJobs) {
+      const status = j.status === "running" ? '<span style="color:var(--green)">running</span>'
+                   : j.status === "done"    ? '<span style="color:var(--cyan)">done</span>'
+                   : `<span style="color:var(--yellow)">${j.status}</span>`;
+      html += `<div class="row" style="margin-top:6px;border-top:1px solid rgba(255,255,255,0.08);padding-top:6px;">`;
+      html += `<span class="key">${j.name}</span><span class="val">${status}</span></div>`;
+      if (j.games_played) html += `<div class="row"><span class="key">  games</span><span class="val">${Number(j.games_played).toLocaleString()}</span></div>`;
+      if (j.rate)         html += `<div class="row"><span class="key">  speed</span><span class="val">${j.rate.toLocaleString()} g/s</span></div>`;
+      if (j.pct_done != null) html += `<div class="row"><span class="key">  progress</span><span class="val">${j.pct_done.toFixed(1)}%</span></div>`;
+      if (j.eta)          html += `<div class="row"><span class="key">  ETA</span><span class="val">${j.eta}</span></div>`;
+    }
+  }
+
+  target.innerHTML = html;
+}
+
+/* ── Init ──────────────────────────────────────────────────────────────── */
+
+async function init() {
+  buildGrid();
+
+  let nnInfo = {available: false};
+  try {
+    nnInfo = await fetch("/api/preflop/nn/status").then(r => r.json());
+  } catch(e) {}
+
+  if (!nnInfo.available) {
+    $("spot-title").textContent = "no NN checkpoint";
+    $("spot-meta").innerHTML =
+      `<span class="err">No neural network checkpoint found.<br>Run training first: <code>python3 solver_training/train_preflop_nn.py --iters 1000 --phase distill</code></span>`;
+    renderNNStatus();
+    return;
+  }
+
+  fillN();
+  fillSpots();
+  renderNNStatus();
+
+  setInterval(renderNNStatus, 15000);
+
+  $("bb-slider").addEventListener("input", () => {
+    $("bb-val").textContent = $("bb-slider").value;
+  });
+  $("bb-slider").addEventListener("change", loadChart);
+
+  $("sel-n").addEventListener("change", () => {
+    CURRENT.n = +$("sel-n").value;
+    fillSpots();
+  });
+
+  $("sel-pos").addEventListener("change", refillScenarios);
+  $("sel-spot").addEventListener("change", onSpotChange);
+}
+
+init();
+</script>
+</body>
+</html>

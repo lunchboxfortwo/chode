@@ -8,15 +8,23 @@ HISTORY_DIR = DATA_DIR / "hand_histories"
 BUY_IN = 10_000
 SMALL_BLIND = 50
 BIG_BLIND = 100
-NUM_PLAYERS = 6
+NUM_PLAYERS = 6   # default; game supports 2–8
 
-SOLVER_PATH = BASE_DIR / "TexasSolver" / "console_solver"
-SOLVER_THREADS = 4
-SOLVER_RAM_GB = 8
-SOLVER_ITERATIONS = 100
-SOLVER_TIME_LIMIT = 1.0
+# Default 6-max bot lineup (5 bots + 1 human)
+DEFAULT_BOT_CONFIGS = [
+    {"name": "Atlas",   "type": "gto"},
+    {"name": "Maverick","type": "whale"},
+    {"name": "Niles",   "type": "nit"},
+    {"name": "Oracle",  "type": "adaptive"},
+    {"name": "Echo",    "type": "gto"},
+]
 
-BOT_NAMES = ["Atlas (GTO)", "Maverick (Whale)", "Niles (Nit)", "Oracle (Adaptive)", "Echo (GTO)"]
-BOT_TYPES = ["gto", "whale", "nit", "adaptive", "gto"]
+# All available bot profiles for UI selection
+BOT_PROFILES = {
+    "gto":      {"label": "GTO",      "desc": "Game Theory Optimal — follows solver output"},
+    "adaptive": {"label": "Adaptive", "desc": "GTO + exploitation overlay based on your tendencies"},
+    "whale":    {"label": "Whale",    "desc": "Loose-aggressive, high VPIP, large bets"},
+    "nit":      {"label": "Nit",      "desc": "Extremely tight — only top 5% of hands"},
+}
 
 POSITIONS_6MAX = ["UTG", "HJ", "CO", "BTN", "SB", "BB"]

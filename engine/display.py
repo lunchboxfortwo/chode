@@ -1,4 +1,4 @@
-"""Rich-based terminal display for Omega Poker."""
+"""Rich-based terminal display for Chode Poker."""
 from rich.console import Console
 from rich.table import Table
 from rich.panel import Panel
@@ -39,7 +39,7 @@ def show_table(
     hand_num: int,
 ):
     console.clear()
-    console.rule(f"[bold cyan] Omega Poker — Hand #{hand_num} — {street} [/bold cyan]")
+    console.rule(f"[bold cyan] Chode Poker — Hand #{hand_num} — {street} [/bold cyan]")
 
     # Board
     board_text = Text()
@@ -89,13 +89,14 @@ def show_table(
         console.print(Panel(card_display, expand=False))
 
 
-def show_action(player: str, action: str, amount: int = 0):
+def show_action(player: str, action: str, amount: int = 0, strategy_note: str = ""):
     color = {
         "fold": "red", "call": "yellow", "check": "dim",
         "raise": "bold green", "bet": "bold green", "allin": "bold magenta",
     }.get(action.lower(), "white")
     amt_str = f" ${amount:,}" if amount else ""
-    console.print(f"  [dim]{player}[/dim] → [{color}]{action.upper()}{amt_str}[/{color}]")
+    note_str = f" [dim italic]{strategy_note}[/dim italic]" if strategy_note else ""
+    console.print(f"  [dim]{player}[/dim] → [{color}]{action.upper()}{amt_str}[/{color}]{note_str}")
 
 
 def show_winner(player: str, amount: int, hand_desc: str = ""):
